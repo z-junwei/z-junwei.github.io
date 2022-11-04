@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.2">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":240,"display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="友情提示 不要在意版本，核心思想不变 抓住骨架进行学习，覆盖所有细节难度太大 解析配置 定位与注册对象 注入对象    Xml与Annotation先演示一下两种方式获取bean。 12345package com.zjw.service;public interface WelcomeService &amp;#123;	String sayHello(String name);&amp;#125;  1234">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring IoC源码解析">
+<meta property="og:url" content="http://example.com/2022/11/04/Spring%20IoC%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:site_name" content="zhang_bigleg">
+<meta property="og:description" content="友情提示 不要在意版本，核心思想不变 抓住骨架进行学习，覆盖所有细节难度太大 解析配置 定位与注册对象 注入对象    Xml与Annotation先演示一下两种方式获取bean。 12345package com.zjw.service;public interface WelcomeService &amp;#123;	String sayHello(String name);&amp;#125;  1234">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/IoCAnalysis202211041639236.png">
+<meta property="og:image" content="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/IoCAnalysis202211041642538.png">
+<meta property="og:image" content="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/IoCAnalysis202211041719374.png">
+<meta property="og:image" content="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/IoCAnalysis202211041725233.png">
+<meta property="article:published_time" content="2022-11-04T09:29:50.000Z">
+<meta property="article:modified_time" content="2022-11-04T09:32:09.087Z">
+<meta property="article:author" content="张大腿">
+<meta property="article:tag" content="Spring">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/IoCAnalysis202211041639236.png">
+
+<link rel="canonical" href="http://example.com/2022/11/04/Spring%20IoC%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Spring IoC源码解析 | zhang_bigleg</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">zhang_bigleg</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">1</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">1</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">3</span></a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/11/04/Spring%20IoC%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/zjw.png">
+      <meta itemprop="name" content="张大腿">
+      <meta itemprop="description" content="哈哈哈哈哈">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="zhang_bigleg">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Spring IoC源码解析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2022-11-04 17:29:50 / 修改时间：17:32:09" itemprop="dateCreated datePublished" datetime="2022-11-04T17:29:50+08:00">2022-11-04</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="友情提示"><a href="#友情提示" class="headerlink" title="友情提示"></a>友情提示</h2><ul>
+<li>不要在意版本，核心思想不变</li>
+<li>抓住骨架进行学习，覆盖所有细节难度太大<ul>
+<li>解析配置</li>
+<li>定位与注册对象</li>
+<li>注入对象</li>
+</ul>
+</li>
+</ul>
+<h2 id="Xml与Annotation"><a href="#Xml与Annotation" class="headerlink" title="Xml与Annotation"></a>Xml与Annotation</h2><p>先演示一下两种方式获取bean。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.zjw.service;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">WelcomeService</span> &#123;</span><br><span class="line">	String <span class="title function_">sayHello</span><span class="params">(String name)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.zjw.service.impl;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.zjw.service.WelcomeService;</span><br><span class="line"><span class="keyword">import</span> org.springframework.stereotype.Service;</span><br><span class="line"></span><br><span class="line"><span class="comment">//@Service</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">WelcomeServiceImpl</span> <span class="keyword">implements</span> <span class="title class_">WelcomeService</span> &#123;</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="keyword">public</span> String <span class="title function_">sayHello</span><span class="params">(String name)</span> &#123;</span><br><span class="line">		System.out.println(<span class="string">&quot;hello, &quot;</span> + name);</span><br><span class="line">		<span class="keyword">return</span> <span class="string">&quot;success&quot;</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="基于Xml"><a href="#基于Xml" class="headerlink" title="基于Xml"></a>基于Xml</h3><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;UTF-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">beans</span> <span class="attr">xmlns</span>=<span class="string">&quot;http://www.springframework.org/schema/beans&quot;</span></span></span><br><span class="line"><span class="tag">	   <span class="attr">xmlns:xsi</span>=<span class="string">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span></span></span><br><span class="line"><span class="tag">	   <span class="attr">xsi:schemaLocation</span>=<span class="string">&quot;http://www.springframework.org/schema/beans</span></span></span><br><span class="line"><span class="string"><span class="tag">       http://www.springframework.org/schema/beans/spring-beans.xsd&quot;</span>&gt;</span></span><br><span class="line"></span><br><span class="line">	<span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;welcomeService&quot;</span> <span class="attr">class</span>=<span class="string">&quot;com.zjw.service.impl.WelcomeServiceImpl&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">beans</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.zjw;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.zjw.service.WelcomeService;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.ApplicationContext;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.AnnotationConfigApplicationContext;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.ComponentScan;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.Configuration;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.support.FileSystemXmlApplicationContext;</span><br><span class="line"></span><br><span class="line"><span class="comment">//@Configuration</span></span><br><span class="line"><span class="comment">//@ComponentScan(&quot;com.zjw&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Entrance</span> &#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">		System.out.println(<span class="string">&quot;hello world&quot;</span>);</span><br><span class="line">		<span class="type">String</span> <span class="variable">xmlPath</span> <span class="operator">=</span> <span class="string">&quot;D:\\study\\SpringSourceCode\\spring-framework-5.2.0.RELEASE\\springdemo\\src\\main\\resources\\spring\\spring-config.xml&quot;</span>;</span><br><span class="line">		<span class="type">ApplicationContext</span> <span class="variable">applicationContext</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">FileSystemXmlApplicationContext</span>(xmlPath);</span><br><span class="line">		<span class="type">WelcomeService</span> <span class="variable">welcomeService</span> <span class="operator">=</span> (WelcomeService) applicationContext.getBean(<span class="string">&quot;welcomeService&quot;</span>);</span><br><span class="line">		welcomeService.sayHello(<span class="string">&quot;spring&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/IoCAnalysis202211041639236.png" alt="image-20221104163904204" style="zoom:67%;" />
+
+<h3 id="基于Annotation"><a href="#基于Annotation" class="headerlink" title="基于Annotation"></a>基于Annotation</h3><p>把上面加了注解的类的注释解开。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.zjw;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.zjw.service.WelcomeService;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.ApplicationContext;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.AnnotationConfigApplicationContext;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.ComponentScan;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.Configuration;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.support.FileSystemXmlApplicationContext;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="meta">@ComponentScan(&quot;com.zjw&quot;)</span><span class="comment">//扫描哪个包下，和自研类似</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Entrance</span> &#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">		<span class="type">AnnotationConfigApplicationContext</span> <span class="variable">applicationContext</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AnnotationConfigApplicationContext</span>(Entrance.class);</span><br><span class="line">		String[] beanDefinitionNames = applicationContext.getBeanDefinitionNames();</span><br><span class="line">		<span class="keyword">for</span> (String beanDefinitionName : beanDefinitionNames) &#123;</span><br><span class="line">			System.out.println(beanDefinitionName);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="type">WelcomeService</span> <span class="variable">welcomeService</span> <span class="operator">=</span> (WelcomeService) applicationContext.getBean(<span class="string">&quot;welcomeServiceImpl&quot;</span>);</span><br><span class="line">		welcomeService.sayHello(<span class="string">&quot;spring&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/IoCAnalysis202211041642538.png" alt="image-20221104164218507" style="zoom:67%;" />
+
+<p>在该包下加了注解的类都被加载到了bean容器中。</p>
+<h2 id="Bean与BeanDefinition"><a href="#Bean与BeanDefinition" class="headerlink" title="Bean与BeanDefinition"></a>Bean与BeanDefinition</h2><p><strong>Bean是Spring的一等公民：</strong></p>
+<ul>
+<li>Bean的本质就是java对象，只是这个对象的声明周期由容器来管理</li>
+<li>不需要为了创建Bean而在原来的java类上添加任何额外的限制</li>
+<li>对java对象的控制方式体现在配置上</li>
+</ul>
+<p><strong>根据配置，生成用来描述Bean的BeanDefinition，常用属性∶</strong></p>
+<ul>
+<li>作用范围scope(@Scope)</li>
+<li>懒加载lazy-init(@Lazy)：决定Bean实例是否延迟加载</li>
+<li>首选primary(@Primary)：设置为true的bean会是优先的实现</li>
+<li>factorv-bean和factorv-method(@Confiauration和@Bean）</li>
+</ul>
+<h3 id="代码显示"><a href="#代码显示" class="headerlink" title="代码显示"></a>代码显示</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.zjw.entity;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">User</span> &#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.zjw.entity.factory;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.zjw.entity.User;</span><br><span class="line"></span><br><span class="line"><span class="comment">//静态工厂调用</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">StaticFactory</span> &#123;</span><br><span class="line">	<span class="comment">//静态的方法，返回User对象</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> User <span class="title function_">getUser</span><span class="params">()</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">User</span>();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.zjw.entity.factory;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.zjw.entity.User;</span><br><span class="line"><span class="comment">//实例工厂调用</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserFactory</span> &#123;</span><br><span class="line">	<span class="comment">//普通的方法，返回User对象</span></span><br><span class="line">	<span class="comment">//不能通过类名调用，需要通过对象调用</span></span><br><span class="line">	<span class="keyword">public</span> User <span class="title function_">getUser</span><span class="params">()</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">User</span>();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.zjw.entity.factory;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.zjw.entity.User;</span><br><span class="line"><span class="keyword">import</span> org.springframework.beans.factory.FactoryBean;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UserFactoryBean</span> <span class="keyword">implements</span> <span class="title class_">FactoryBean</span>&lt;User&gt; &#123;</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="keyword">public</span> User <span class="title function_">getObject</span><span class="params">()</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">User</span>();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="keyword">public</span> Class&lt;?&gt; getObjectType() &#123;</span><br><span class="line">		<span class="keyword">return</span> User.class;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Entrance</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line"></span><br><span class="line">		<span class="comment">//得到无参构造函数创建的对象:</span></span><br><span class="line">		<span class="type">User</span> <span class="variable">user1a</span> <span class="operator">=</span> (User) applicationContext.getBean(<span class="string">&quot;user1&quot;</span>);</span><br><span class="line">		<span class="type">User</span> <span class="variable">user1b</span> <span class="operator">=</span> (User) applicationContext.getBean(<span class="string">&quot;user1&quot;</span>);</span><br><span class="line">		<span class="comment">//得到静态工厂创建的对象：</span></span><br><span class="line">		<span class="type">User</span> <span class="variable">user2a</span> <span class="operator">=</span> (User) applicationContext.getBean(<span class="string">&quot;user2&quot;</span>);</span><br><span class="line">		<span class="type">User</span> <span class="variable">user2c</span> <span class="operator">=</span> (User) applicationContext.getBean(<span class="string">&quot;user2&quot;</span>);</span><br><span class="line">		<span class="comment">//得到实例工厂创建的对象：</span></span><br><span class="line">		<span class="type">User</span> <span class="variable">user3a</span> <span class="operator">=</span> (User) applicationContext.getBean(<span class="string">&quot;user3&quot;</span>);</span><br><span class="line">		<span class="type">User</span> <span class="variable">user3b</span> <span class="operator">=</span> (User) applicationContext.getBean(<span class="string">&quot;user3&quot;</span>);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">		System.out.println(<span class="string">&quot;无参构造函数创建的对象:&quot;</span> + user1a);</span><br><span class="line">		System.out.println(<span class="string">&quot;无参构造函数创建的对象:&quot;</span> + user1b);</span><br><span class="line">		System.out.println(<span class="string">&quot;静态工厂创建的对象：&quot;</span> + user2a);</span><br><span class="line">		System.out.println(<span class="string">&quot;静态工厂创建的对象：&quot;</span> + user2c);</span><br><span class="line">		System.out.println(<span class="string">&quot;实例工厂创建的对象：&quot;</span> + user3a);</span><br><span class="line">		System.out.println(<span class="string">&quot;实例工厂创建的对象：&quot;</span> + user3b);</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;UTF-8&quot;</span>?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">beans</span> <span class="attr">xmlns</span>=<span class="string">&quot;http://www.springframework.org/schema/beans&quot;</span></span></span><br><span class="line"><span class="tag">	   <span class="attr">xmlns:xsi</span>=<span class="string">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span></span></span><br><span class="line"><span class="tag">	   <span class="attr">xsi:schemaLocation</span>=<span class="string">&quot;http://www.springframework.org/schema/beans</span></span></span><br><span class="line"><span class="string"><span class="tag">       http://www.springframework.org/schema/beans/spring-beans.xsd&quot;</span>&gt;</span></span><br><span class="line"></span><br><span class="line">	<span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;welcomeService&quot;</span> <span class="attr">class</span>=<span class="string">&quot;com.zjw.service.impl.WelcomeServiceImpl&quot;</span>/&gt;</span></span><br><span class="line">	<span class="comment">&lt;!-- 1.使用类的无参构造函数创建 --&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;user1&quot;</span> <span class="attr">class</span>=<span class="string">&quot;com.zjw.entity.User&quot;</span> <span class="attr">scope</span>=<span class="string">&quot;singleton&quot;</span> <span class="attr">lazy-init</span>=<span class="string">&quot;true&quot;</span> <span class="attr">primary</span>=<span class="string">&quot;true&quot;</span>/&gt;</span></span><br><span class="line">	<span class="comment">&lt;!-- 2.使用静态工厂进行创建 --&gt;</span></span><br><span class="line">	<span class="comment">&lt;!-- class的值不是写User对象的全路径，而是写静态工厂的全路径 --&gt;</span></span><br><span class="line">	<span class="comment">&lt;!-- factory-method的值写要调用的方法 --&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;user2&quot;</span> <span class="attr">class</span>=<span class="string">&quot;com.zjw.entity.factory.StaticFactory&quot;</span> <span class="attr">factory-method</span>=<span class="string">&quot;getUser&quot;</span> <span class="attr">scope</span>=<span class="string">&quot;singleton&quot;</span>/&gt;</span></span><br><span class="line">	<span class="comment">&lt;!-- 3.使用实例工厂进行创建 --&gt;</span></span><br><span class="line">	<span class="comment">&lt;!-- 需要先创建factoryBean对象，再通过factoryBean对象进行调用 --&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;userFactory&quot;</span> <span class="attr">class</span>=<span class="string">&quot;com.zjw.entity.factory.UserFactory&quot;</span>/&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;user3&quot;</span> <span class="attr">factory-bean</span>=<span class="string">&quot;userFactory&quot;</span> <span class="attr">factory-method</span>=<span class="string">&quot;getUser&quot;</span> <span class="attr">scope</span>=<span class="string">&quot;prototype&quot;</span> /&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">beans</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/IoCAnalysis202211041719374.png" alt="image-20221104171933387"></p>
+<p>你会发现当scope=”singleton”，对象相同；scope=”prototype”对象不同。</p>
+<h3 id="容器初始化主要步骤"><a href="#容器初始化主要步骤" class="headerlink" title="容器初始化主要步骤"></a>容器初始化主要步骤</h3><p><img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/IoCAnalysis202211041725233.png" alt="image-20221104172550192"></p>
+<ul>
+<li>解析配置</li>
+<li>定位与注册对象</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持将鼓励我继续创作.</div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Spring/" rel="tag"># Spring</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/11/04/%E8%87%AA%E7%A0%94IoC%E6%A1%86%E6%9E%B6/" rel="prev" title="自研IoC框架">
+      <i class="fa fa-chevron-left"></i> 自研IoC框架
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%8B%E6%83%85%E6%8F%90%E7%A4%BA"><span class="nav-number">1.</span> <span class="nav-text">友情提示</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Xml%E4%B8%8EAnnotation"><span class="nav-number">2.</span> <span class="nav-text">Xml与Annotation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8EXml"><span class="nav-number">2.1.</span> <span class="nav-text">基于Xml</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8EAnnotation"><span class="nav-number">2.2.</span> <span class="nav-text">基于Annotation</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Bean%E4%B8%8EBeanDefinition"><span class="nav-number">3.</span> <span class="nav-text">Bean与BeanDefinition</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E6%98%BE%E7%A4%BA"><span class="nav-number">3.1.</span> <span class="nav-text">代码显示</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%B9%E5%99%A8%E5%88%9D%E5%A7%8B%E5%8C%96%E4%B8%BB%E8%A6%81%E6%AD%A5%E9%AA%A4"><span class="nav-number">3.2.</span> <span class="nav-text">容器初始化主要步骤</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="张大腿"
+      src="/images/zjw.png">
+  <p class="site-author-name" itemprop="name">张大腿</p>
+  <div class="site-description" itemprop="description">哈哈哈哈哈</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/z-junwei" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;z-junwei" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">张大腿</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
