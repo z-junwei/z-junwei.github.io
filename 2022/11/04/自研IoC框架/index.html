@@ -6,18 +6,20 @@
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 5.4.2">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/icon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/icon.png">
   <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
 <link rel="stylesheet" href="/css/main.css">
 
 
 <link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":240,"display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","width":240,"display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":true,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":"valine","storage":true,"lazyload":true,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="Q版IoC，简单的实现扫描配置并注入自定义的Bean容器。">
@@ -90,8 +92,7 @@
   </style>
 </noscript>
 
-</head>
-
+<style>.darkmode--activated{--body-bg-color:#282828;--content-bg-color:#333;--card-bg-color:#555;--text-color:#ccc;--blockquote-color:#bbb;--link-color:#ccc;--link-hover-color:#eee;--brand-color:#ddd;--brand-hover-color:#ddd;--table-row-odd-bg-color:#282828;--table-row-hover-bg-color:#363636;--menu-item-bg-color:#555;--btn-default-bg:#222;--btn-default-color:#ccc;--btn-default-border-color:#555;--btn-default-hover-bg:#666;--btn-default-hover-color:#ccc;--btn-default-hover-border-color:#666;--highlight-background:#282b2e;--highlight-foreground:#a9b7c6;--highlight-gutter-background:#34393d;--highlight-gutter-foreground:#9ca9b6}.darkmode--activated img{opacity:.75}.darkmode--activated img:hover{opacity:.9}.darkmode--activated code{color:#69dbdc;background:0 0}button.darkmode-toggle{z-index:9999}.darkmode-ignore,img{display:flex!important}.beian img{display:inline-block!important}</style></head>
 <body itemscope itemtype="http://schema.org/WebPage">
   <div class="container use-motion">
     <div class="headband"></div>
@@ -117,6 +118,7 @@
 
   <div class="site-nav-right">
     <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
     </div>
   </div>
 </div>
@@ -151,11 +153,38 @@
     <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">2</span></a>
 
   </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
   </ul>
 </nav>
 
 
 
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
 
 </div>
     </header>
@@ -165,6 +194,9 @@
     <i class="fa fa-arrow-up"></i>
     <span>0%</span>
   </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/z-junwei" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
 
 
     <main class="main">
@@ -184,7 +216,7 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/zjw.png">
       <meta itemprop="name" content="张大腿">
-      <meta itemprop="description" content="哈哈哈哈哈">
+      <meta itemprop="description" content="Stay Hungry, Stay Foolish">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
@@ -216,6 +248,41 @@
             </span>
 
           
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2022/11/04/%E8%87%AA%E7%A0%94IoC%E6%A1%86%E6%9E%B6/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/11/04/%E8%87%AA%E7%A0%94IoC%E6%A1%86%E6%9E%B6/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>21k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>19 分钟</span>
+            </span>
             <div class="post-description">Q版IoC，简单的实现扫描配置并注入自定义的Bean容器。</div>
 
         </div>
@@ -252,7 +319,7 @@
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> org.IoC.core.utils;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.junit.jupiter.api.Assertions;</span><br><span class="line"><span class="keyword">import</span> org.junit.jupiter.api.DisplayName;</span><br><span class="line"><span class="keyword">import</span> org.junit.jupiter.api.Test;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.Set;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ClassUnitTest</span> &#123;</span><br><span class="line">	<span class="meta">@DisplayName(&quot;提取目标类方法：getClassPackageTest&quot;)</span></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">getClassPackageTest</span><span class="params">()</span>&#123;</span><br><span class="line">		Set&lt;Class&lt;?&gt;&gt; classSet = ClassUtil.getPackageClass(<span class="string">&quot;com.zjw.entity&quot;</span>);</span><br><span class="line">		System.out.println(classSet);</span><br><span class="line">		Assertions.assertEquals(<span class="number">12</span>, classSet.size());</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
 <p>测试结果：</p>
-<p><img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041602520.png" alt="image-20221104151955799"></p>
+<p><img data-src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041602520.png" alt="image-20221104151955799"></p>
 <h3 id="实现容器"><a href="#实现容器" class="headerlink" title="实现容器"></a>实现容器</h3><h4 id="单例模式问题"><a href="#单例模式问题" class="headerlink" title="单例模式问题"></a>单例模式问题</h4><p>自研容器推荐使用饿汉模式，方便简洁，但是要考虑安全性。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//饿汉模式</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">StarvingSingleton</span> &#123;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">StarvingSingleton</span> <span class="variable">starvingSingleton</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StarvingSingleton</span>();</span><br><span class="line">	<span class="keyword">private</span> <span class="title function_">StarvingSingleton</span><span class="params">()</span>&#123;&#125;;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> StarvingSingleton <span class="title function_">getInstance</span><span class="params">()</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> starvingSingleton;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -264,7 +331,7 @@
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//反射破环</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">SingletonDemo</span> &#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException &#123;</span><br><span class="line">		System.out.println(StarvingSingleton.getInstance());</span><br><span class="line">		<span class="type">Class</span> <span class="variable">clazz</span> <span class="operator">=</span> StarvingSingleton.class;</span><br><span class="line">		<span class="type">Constructor</span> <span class="variable">constructor</span> <span class="operator">=</span> clazz.getDeclaredConstructor();</span><br><span class="line">		constructor.setAccessible(<span class="literal">true</span>);</span><br><span class="line">		System.out.println(constructor.newInstance());</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>运行结果：</p>
-<p><img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041602014.png" alt="image-20221102105920885"></p>
+<p><img data-src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041602014.png" alt="image-20221102105920885"></p>
 <p><strong>解决办法：</strong></p>
 <p>采用枚举类。</p>
 <blockquote>
@@ -276,11 +343,11 @@
 <p>测试：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">SingletonDemo</span> &#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException &#123;</span><br><span class="line">		System.out.println(StarvingSingletonEnum.getInstance());</span><br><span class="line">		<span class="type">Class</span> <span class="variable">clazz</span> <span class="operator">=</span> StarvingSingletonEnum.class;</span><br><span class="line">		<span class="type">Constructor</span> <span class="variable">constructor</span> <span class="operator">=</span> clazz.getDeclaredConstructor();</span><br><span class="line">		constructor.setAccessible(<span class="literal">true</span>);</span><br><span class="line">		<span class="type">StarvingSingletonEnum</span> <span class="variable">starvingSingletonEnum</span> <span class="operator">=</span> (StarvingSingletonEnum) constructor.newInstance();</span><br><span class="line">		System.out.println(starvingSingletonEnum.getInstance());</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p><img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041602966.png" alt="202211021348290"></p>
+<p><img data-src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041602966.png" alt="202211021348290"></p>
 <p>直接测试枚举类：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException &#123;</span><br><span class="line">		<span class="type">Class</span> <span class="variable">clazz</span> <span class="operator">=</span> ContainerHolder.class;</span><br><span class="line">		<span class="type">Constructor</span> <span class="variable">constructor</span> <span class="operator">=</span> clazz.getDeclaredConstructor();</span><br><span class="line"><span class="comment">//		Constructor constructor = clazz.getDeclaredConstructor(String.class, int.class);</span></span><br><span class="line">		constructor.setAccessible(<span class="literal">true</span>);</span><br><span class="line">		System.out.println(constructor.newInstance());</span><br><span class="line">		System.out.println(StarvingSingletonEnum.getInstance());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p><img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041601162.png" alt="202211021349240"></p>
+<p><img data-src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041601162.png" alt="202211021349240"></p>
 <h4 id="容器的组成部分"><a href="#容器的组成部分" class="headerlink" title="容器的组成部分"></a>容器的组成部分</h4><ul>
 <li>保存Class对象以及其实例的载体</li>
 <li>容器的加载</li>
@@ -312,7 +379,7 @@
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">BeanContainerTest</span> &#123;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> BeanContainer beanContainer;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@BeforeAll</span></span><br><span class="line">	<span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">init</span><span class="params">()</span>&#123;</span><br><span class="line">		beanContainer = BeanContainer.getInstance();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">loadBeansTest</span><span class="params">()</span>&#123;</span><br><span class="line">		Assertions.assertEquals(<span class="literal">false</span>, beanContainer.isLoaded());</span><br><span class="line">		beanContainer.loadBeans(<span class="string">&quot;com.zjw&quot;</span>);</span><br><span class="line">		Assertions.assertEquals(<span class="number">2</span>, beanContainer.getBeanSize()); <span class="comment">// 我只加了两处</span></span><br><span class="line">		Assertions.assertEquals(<span class="literal">true</span>, beanContainer.isLoaded());</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>结果编译成功，说明加了自定义注解的类已经被成功放入到了Map中，打印一下beanMap看看。</p>
-<p><img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041600688.png" alt="image-20221102160914939"></p>
+<p><img data-src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041600688.png" alt="image-20221102160914939"></p>
 <h5 id="容器的操作方式"><a href="#容器的操作方式" class="headerlink" title="容器的操作方式"></a>容器的操作方式</h5><p>涉及到容器的增删改查</p>
 <ul>
 <li>增加、删除操作</li>
@@ -328,13 +395,13 @@
 <p><strong>测试某些方法：</strong></p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//指定测试类的执行顺序</span></span><br><span class="line"><span class="meta">@TestMethodOrder(MethodOrderer.OrderAnnotation.class)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">BeanContainerTest</span> &#123;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> BeanContainer beanContainer;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@BeforeAll</span></span><br><span class="line">	<span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">init</span><span class="params">()</span>&#123;</span><br><span class="line">		beanContainer = BeanContainer.getInstance();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@DisplayName(&quot;测试容器：loadBeansTest&quot;)</span></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="meta">@Order(1)</span> <span class="comment">//最先执行,表示要先加载容器,获取bean，才能执行后面的getBean等方法。</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">loadBeansTest</span><span class="params">()</span>&#123;</span><br><span class="line">		Assertions.assertEquals(<span class="literal">false</span>, beanContainer.isLoaded());</span><br><span class="line">		beanContainer.loadBeans(<span class="string">&quot;com.zjw&quot;</span>);</span><br><span class="line">		Assertions.assertEquals(<span class="number">2</span>, beanContainer.getBeanSize());</span><br><span class="line">		Assertions.assertEquals(<span class="literal">true</span>, beanContainer.isLoaded());</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@DisplayName(&quot;根据类Class获取实例：getBeanTest&quot;)</span></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="meta">@Order(2)</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">getBeanTest</span><span class="params">()</span>&#123;</span><br><span class="line">		<span class="comment">//可以获取</span></span><br><span class="line">		<span class="type">UserController</span> <span class="variable">userController</span> <span class="operator">=</span> (UserController) beanContainer.getBean(UserController.class);</span><br><span class="line">		Assertions.assertEquals(<span class="literal">true</span>, userController <span class="keyword">instanceof</span> UserController);</span><br><span class="line"></span><br><span class="line">		<span class="comment">//不可以获取</span></span><br><span class="line">		<span class="type">User</span> <span class="variable">user</span> <span class="operator">=</span> (User) beanContainer.getBean(User.class);</span><br><span class="line">		Assertions.assertEquals(<span class="literal">null</span>, user);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@DisplayName(&quot;根据注解类型获取对应的实例：getClassesByAnnotationTest&quot;)</span></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="meta">@Order(3)</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">getClassesByAnnotationTest</span><span class="params">()</span>&#123;</span><br><span class="line">		Assertions.assertEquals(<span class="literal">true</span>, beanContainer.isLoaded());</span><br><span class="line">		Assertions.assertEquals(<span class="number">1</span>, beanContainer.getClassesByAnnotation(Controller.class).size());</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@DisplayName(&quot;根据接口获取实现类：getClassesBySuperTest&quot;)</span></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="meta">@Order(4)</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">getClassesBySuperTest</span><span class="params">()</span>&#123;</span><br><span class="line">		Assertions.assertEquals(<span class="literal">true</span>, beanContainer.isLoaded());</span><br><span class="line">		Assertions.assertEquals(<span class="literal">true</span>, beanContainer.getClassesBySuper(UserService.class).contains(UserServiceImpl.class));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p><img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041559274.png" alt="image-20221102172418850"></p>
+<p><img data-src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041559274.png" alt="image-20221102172418850"></p>
 <h3 id="依赖注入"><a href="#依赖注入" class="headerlink" title="依赖注入"></a>依赖注入</h3><p>目前容器里面管理的Bean实例仍可能是不完备的</p>
 <ul>
 <li>实例里面某些必须的成员变量还没有被创建出来</li>
 </ul>
 <p>例如，需要添加类似@Autowired的注解将其注入。</p>
-<img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041603678.png" alt="202211041600589" style="zoom:67%;" />
+<img data-src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041603678.png" alt="202211041600589" style="zoom:67%;" />
 
 <p><strong>实现思路：</strong></p>
 <ul>
@@ -344,7 +411,7 @@
 </ul>
 <h4 id="定义相关的注解标签"><a href="#定义相关的注解标签" class="headerlink" title="定义相关的注解标签"></a>定义相关的注解标签</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> org.IoC.inject.annotation;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.ElementType;</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.Retention;</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.RetentionPolicy;</span><br><span class="line"><span class="keyword">import</span> java.lang.annotation.Target;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 目前支持成员变量注入</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@Target(ElementType.FIELD)</span></span><br><span class="line"><span class="meta">@Retention(RetentionPolicy.RUNTIME)</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> Autowired &#123;</span><br><span class="line">	<span class="comment">//用来处理一个接口有多个是实现类的情况,可以给实现类定义一个value区分</span></span><br><span class="line">	String <span class="title function_">value</span><span class="params">()</span> <span class="keyword">default</span> <span class="string">&quot;&quot;</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
-<h4 id="实现依赖注入"><a href="#实现依赖注入" class="headerlink" title="实现依赖注入"></a>实现依赖注入</h4><img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041604539.png" alt="202211041449933" style="zoom:67%;" />
+<h4 id="实现依赖注入"><a href="#实现依赖注入" class="headerlink" title="实现依赖注入"></a>实现依赖注入</h4><img data-src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041604539.png" alt="202211041449933" style="zoom:67%;" />
 
 <p><strong>思路（以上图为例）：</strong></p>
 <ol>
@@ -360,14 +427,14 @@
 <p><strong>1、UserService只有一个实现类UserServiceImpl。</strong></p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> org.IoC.inject;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.zjw.controller.UserController;</span><br><span class="line"><span class="keyword">import</span> org.IoC.core.BeanContainer;</span><br><span class="line"><span class="keyword">import</span> org.junit.jupiter.api.Assertions;</span><br><span class="line"><span class="keyword">import</span> org.junit.jupiter.api.DisplayName;</span><br><span class="line"><span class="keyword">import</span> org.junit.jupiter.api.Test;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DependencyInjectorTest</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@DisplayName(&quot;依赖注入doIoC&quot;)</span></span><br><span class="line">	<span class="meta">@Test</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">doIoCTest</span><span class="params">()</span>&#123;</span><br><span class="line">		<span class="type">BeanContainer</span> <span class="variable">beanContainer</span> <span class="operator">=</span> BeanContainer.getInstance();</span><br><span class="line">		beanContainer.loadBeans(<span class="string">&quot;com.zjw&quot;</span>);</span><br><span class="line">		Assertions.assertEquals(<span class="literal">true</span>, beanContainer.isLoaded());</span><br><span class="line">		<span class="type">UserController</span> <span class="variable">userController</span> <span class="operator">=</span> (UserController) beanContainer.getBean(UserController.class);</span><br><span class="line">		Assertions.assertEquals(<span class="literal">true</span>, userController <span class="keyword">instanceof</span> UserController);</span><br><span class="line">		<span class="comment">//UserController要加上@Getter注解，以获取注入的service实例</span></span><br><span class="line">		Assertions.assertEquals(<span class="literal">null</span>, userController.getUserService());</span><br><span class="line">		<span class="keyword">new</span> <span class="title class_">DependencyInjector</span>().doIoC();</span><br><span class="line">		Assertions.assertNotEquals(<span class="literal">null</span>, userController.getUserService());</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p><img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041557805.png" alt="image-20221104151225991"></p>
+<p><img data-src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041557805.png" alt="image-20221104151225991"></p>
 <p><strong>2、UserService只有一个实现类UserServiceImpl、UserServiceImpl2。</strong></p>
-<p><img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041557984.png" alt="image-20221104151327098"></p>
+<p><img data-src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041557984.png" alt="image-20221104151327098"></p>
 <p>给@Autowired指定value值</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Autowired(value = &quot;UserServiceImpl&quot;)</span></span><br><span class="line"><span class="keyword">private</span> UserService userService;</span><br></pre></td></tr></table></figure>
 
-<p><img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041557562.png" alt="image-20221104151527252"></p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><img src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041557293.jpeg" alt="1667547977897"></p>
+<p><img data-src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041557562.png" alt="image-20221104151527252"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><img data-src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/MySelfIoC/202211041557293.jpeg" alt="1667547977897"></p>
 
     </div>
 
@@ -375,19 +442,46 @@
     
     
         <div class="reward-container">
-  <div>您的支持将鼓励我继续创作.</div>
+  <div>赏个鸡腿🍗</div>
   <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
     打赏
   </button>
   <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.png" alt="张大腿 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.png" alt="张大腿 支付宝">
+        <p>支付宝</p>
+      </div>
 
   </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>张大腿
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://example.com/2022/11/04/%E8%87%AA%E7%A0%94IoC%E6%A1%86%E6%9E%B6/" title="自研IoC框架">http://example.com/2022/11/04/自研IoC框架/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
 </div>
 
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/Spring/" rel="tag"># Spring</a>
+              <a href="/tags/Spring/" rel="tag"><i class="fa fa-tags"></i> Spring</a>
           </div>
 
         
@@ -404,6 +498,13 @@
       </footer>
     
   </article>
+  <div>
+    
+        <div style="text-align:center;color:#ccc;font-size:14px;">
+            ------------- 本文结束<i class="fa fa-heart"></i>感谢您的阅读-------------
+     </div>
+    
+</div>
   
   
   
@@ -412,6 +513,7 @@
 
           </div>
           
+    <div class="comments" id="valine-comments"></div>
 
 <script>
   window.addEventListener('tabs:register', () => {
@@ -467,7 +569,7 @@
     <img class="site-author-image" itemprop="image" alt="张大腿"
       src="/images/zjw.png">
   <p class="site-author-name" itemprop="name">张大腿</p>
-  <div class="site-description" itemprop="description">哈哈哈哈哈</div>
+  <div class="site-description" itemprop="description">Stay Hungry, Stay Foolish</div>
 </div>
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
@@ -524,9 +626,41 @@
     <i class="fa fa-heart"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">张大腿</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">27k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">25 分钟</span>
 </div>
 
         
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
 
 
 
@@ -541,6 +675,9 @@
 
   
   <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/medium-zoom@1/dist/medium-zoom.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/pangu@4/dist/browser/pangu.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 
@@ -562,6 +699,10 @@
 
 
 
+  
+<script src="/js/local-search.js"></script>
+
+
 
 
 
@@ -576,6 +717,58 @@
   
 
   
+<script src="https://unpkg.com/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
+
+<script>
+var options = {
+  bottom: '64px',
+  right: 'unset',
+  left: '32px',
+  time: '0.5s',
+  mixColor: 'transparent',
+  backgroundColor: 'transparent',
+  buttonColorDark: '#100f2c',
+  buttonColorLight: '#fff',
+  saveInCookies: true,
+  label: '🌓',
+  autoMatchOsTheme: true
+}
+const darkmode = new Darkmode(options);
+window.darkmode = darkmode;
+darkmode.showWidget();
+</script>
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'VCcHc5ihw83ZQOhmKgPyPlko-gzGzoHsz',
+      appKey     : 'VTmfAmETHQsZ1yFJad61e5UO',
+      placeholder: "有什么问题，欢迎留言指正与交流...",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
 
 </body>
 </html>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/clicklove.js"></script>
+
