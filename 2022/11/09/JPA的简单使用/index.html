@@ -31,7 +31,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/spring/202211091743708.png">
 <meta property="article:published_time" content="2022-11-09T09:29:50.000Z">
-<meta property="article:modified_time" content="2022-11-09T12:18:43.900Z">
+<meta property="article:modified_time" content="2022-11-10T06:53:53.453Z">
 <meta property="article:author" content="张大腿">
 <meta property="article:tag" content="Spring">
 <meta name="twitter:card" content="summary">
@@ -129,7 +129,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">1</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">2</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
@@ -139,7 +139,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">3</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">4</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -222,10 +222,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2022-11-09 17:29:50 / 修改时间：20:18:43" itemprop="dateCreated datePublished" datetime="2022-11-09T17:29:50+08:00">2022-11-09</time>
+              <time title="创建时间：2022-11-09 17:29:50" itemprop="dateCreated datePublished" datetime="2022-11-09T17:29:50+08:00">2022-11-09</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-11-10 14:53:53" itemprop="dateModified" datetime="2022-11-10T14:53:53+08:00">2022-11-10</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -336,6 +342,9 @@
 <h5 id="分页与排序"><a href="#分页与排序" class="headerlink" title="分页与排序"></a>分页与排序</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 分页与排序</span></span><br><span class="line"></span><br><span class="line"><span class="meta">@GetMapping(&quot;findUserPageSort&quot;)</span></span><br><span class="line">   <span class="keyword">public</span> Page <span class="title function_">findUserPageSort</span><span class="params">(<span class="meta">@RequestParam</span> String age)</span>&#123;</span><br><span class="line">       <span class="type">Specification</span> <span class="variable">specification</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Specification</span>() &#123;</span><br><span class="line">           <span class="comment">/**</span></span><br><span class="line"><span class="comment">            * <span class="doctag">@return</span> Predicate:定义了查询条件</span></span><br><span class="line"><span class="comment">            * <span class="doctag">@param</span> root&lt;Users&gt; root:根对象。封装了查询条件的对象</span></span><br><span class="line"><span class="comment">            * <span class="doctag">@param</span> query&lt;?&gt; query:定义了一个基本的查询。一般不使用</span></span><br><span class="line"><span class="comment">            * <span class="doctag">@param</span> criteriaBuilder cb:创建一个查询条件</span></span><br><span class="line"><span class="comment">            */</span></span><br><span class="line">           <span class="meta">@Override</span></span><br><span class="line">           <span class="keyword">public</span> Predicate <span class="title function_">toPredicate</span><span class="params">(Root root, CriteriaQuery query, CriteriaBuilder criteriaBuilder)</span> &#123;</span><br><span class="line">               <span class="keyword">return</span> criteriaBuilder.equal(root.get(<span class="string">&quot;age&quot;</span>),age);</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;;</span><br><span class="line">       <span class="comment">//排序</span></span><br><span class="line">       <span class="type">Sort</span> <span class="variable">sort</span> <span class="operator">=</span> Sort.by(Sort.Direction.DESC, <span class="string">&quot;id&quot;</span>);</span><br><span class="line">       <span class="comment">//分页</span></span><br><span class="line">       <span class="type">Pageable</span> <span class="variable">pageable</span> <span class="operator">=</span>  PageRequest.of(<span class="number">0</span>,<span class="number">10</span>, sort);</span><br><span class="line">       Page&lt;User&gt; page = userRepository.findAll(specification, pageable);</span><br><span class="line">       System.out.println(<span class="string">&quot;总条数：&quot;</span>+page.getTotalElements());</span><br><span class="line">       System.out.println(<span class="string">&quot;总页数：&quot;</span>+page.getTotalPages());</span><br><span class="line">       List&lt;User&gt; users = page.getContent();</span><br><span class="line">       System.out.println(users.toString());</span><br><span class="line">       <span class="keyword">return</span> page;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
 
 <p><img data-src="https://zjw-note-images.oss-cn-shanghai.aliyuncs.com/img/spring/202211091743708.png" alt="image-20221109174339660"></p>
+<blockquote>
+<p>本来打算看一下利用Spring Data JPA的多表关联查询的，看了一圈感觉好麻烦，怀念MyBatis plus!</p>
+</blockquote>
 <p>参考：</p>
 <p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/chenglc/p/11226693.html">https://www.cnblogs.com/chenglc/p/11226693.html</a></p>
 
@@ -479,7 +488,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-count">4</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -492,7 +501,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-count">2</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -534,13 +543,13 @@
       <i class="fa fa-chart-area"></i>
     </span>
       <span class="post-meta-item-text">站点总字数：</span>
-    <span title="站点总字数">34k</span>
+    <span title="站点总字数">65k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">31 分钟</span>
+    <span title="站点阅读时长">59 分钟</span>
 </div>
 
         
